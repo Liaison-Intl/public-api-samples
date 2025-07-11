@@ -1,8 +1,42 @@
-# Title:    Retrieve Documents from CAS API
-# Language: Python 3.7
-# Author:   Greg Martin
-# Date:     9/3/2019
-# Contact:  gmartin@liaisonedu.com
+"""
+CAS API Document Retrieval Module
+================================
+
+This module provides functionality to retrieve documents from the CAS (Centralized Application Service) API.
+It handles authentication, API interactions, and document downloads for Liaison Education's CAS platform.
+
+@created     2019-09-03
+@version     1.1
+@license     Proprietary - Liaison Education
+@copyright   Copyright (c) 2019 Liaison Education
+
+@description
+    This script enables automated retrieval of application documents from the CAS API.
+    It supports downloading PDF documents, transcripts, and other supporting materials
+    for applications submitted through various CAS platforms (CASPA, GradCAS, SOPHAS, etc.).
+    
+    Key Features:
+    - Secure authentication with API key and credentials
+    - Organization and program discovery
+    - Application listing and filtering by date ranges
+    - Document download and ZIP file creation
+    - CSV index generation for downloaded documents
+    
+    Prerequisites:
+    - Valid CAS API credentials (API key, username, password)
+    - Access to specific Application Form IDs
+    - Required Python packages: requests, beautifultable, datetime, os, zipfile, csv
+    
+    Usage:
+    1. Configure API credentials and save directory
+    2. Set Application Form ID, Organization ID, and Program ID
+    3. Run script to download documents
+    4. Review generated CSV index and ZIP files
+
+@see        https://api.liaisonedu.com/reference/swagger-ui/index.html
+@since      2019-09-03
+@deprecated None
+"""
 
 # Prepare Environment
 # Make sure you have all the necessary libraries to interact with the API and access target directories
@@ -15,9 +49,9 @@ from zipfile import ZipFile  # tool for interacting with zip files
 import csv  # tool for writing indexes of PDFs in zip files
 
 # Credentials
-# Once you’ve been granted access, you’ll be given credentials for accessing the CAS API:
+# Once you've been granted access, you'll be given credentials for accessing the CAS API:
 # API key, username, and password.
-# Store these credentials in a secure location; you’ll need to use them every time you interact with the CAS API.
+# Store these credentials in a secure location; you'll need to use them every time you interact with the CAS API.
 apiKey = ""
 UserName = ""
 Password = ""
@@ -26,7 +60,7 @@ Password = ""
 # The root URL to use for the CAS API can depend on which CAS and environment (production, prelaunch) you want to use.
 # For production data, the default root URL is https://api.liaisonedu.com.
 # Unless otherwise informed, this is the root URL to use.
-# Contact Liaison customer service if you’re unsure of which root URL to use.
+# Contact Liaison customer service if you're unsure of which root URL to use.
 baseUrl = "https://api.liaisonedu.com"
 
 # Local Save Directory
@@ -39,32 +73,39 @@ startTime = datetime.now()
 
 
 # Authorization
-# To successfully make any calls to the CAS API, you’ll need an authorization token.
-# The authorization call is the first call you’ll make in any interaction with the CAS API.
+# To successfully make any calls to the CAS API, you'll need an authorization token.
+# The authorization call is the first call you'll make in any interaction with the CAS API.
 # The token is valid for one hour, so you may need to reauthorize if your operation lasts a long time.
-# To retrieve an authorization token, make a call to the “Sign In” endpoint
+# To retrieve an authorization token, make a call to the "Sign In" endpoint
 # (POST /v1/auth/token
 # https://api.liaisonedu.com/reference/index.htm#/operations/Security/signIn).
-# You’ll need to include two headers:
+# You'll need to include two headers:
 # Content-Type: "application/json"
 # x-api-key: "{{your API key here}}"
-# You’ll also need to include your credentials in the body of the request:
+# You'll also need to include your credentials in the body of the request:
 # {
 # 	"UserName": "{{your username here}}"
 # 	,"Password": "{{your password here}}"
 # }
-# The response to this call will include a “Token” element.
-# This “Token”, along with your API key, must be included in the headers of all subsequent calls to the CAS API.
+# The response to this call will include a "Token" element.
+# This "Token", along with your API key, must be included in the headers of all subsequent calls to the CAS API.
 # Your calls will all have these two headers:
 # x-api-key: "{{your API key here}}"
-# Authorization: “{{your auth Token here}}”
+# Authorization: "{{your auth Token here}}"
 def auth(apiKey, UserName, Password):
     """
-        Authorize session for CAS API
-        :param apiKey: user account's CAS API key
-        :param UserName: user account's username
-        :param Password: user account's password
-        :return: Authorization Token to be used with all requests
+    Authorize session for CAS API
+    
+    Authenticates the user with the CAS API using provided credentials and returns
+    an authorization token that must be included in all subsequent API calls.
+    
+    @param apiKey    The user's CAS API key for authentication
+    @param UserName  The username for the CAS API account
+    @param Password  The password for the CAS API account
+    @return          Authorization token string to be used with all API requests
+    @throws          requests.RequestException if authentication fails
+    @throws          KeyError if response doesn't contain "Token" field
+    @since           2019-09-03
     """
     endpoint = "/v1/auth/token"
     url = baseUrl + endpoint
@@ -83,16 +124,24 @@ def auth(apiKey, UserName, Password):
 # Define a function for interacting with the CAS API
 def casapi(endpoint, apiKey, baseUrl="https://api.liaisonedu.com", requestType="GET", payload="", contentJson=False, extraHeaders={}, urlParams={}):
     """
-        Interact with various CAS API endpoints
-        :param baseUrl: the root URL for the environment you want to interact with (Defaults to prod: baseUrl="https://api.liaisonedu.com")
-        :param endpoint: the URL indicating the desired endpoint (see https://api.liaisonedu.com/reference/index.htm)
-        :param xapikey: the user's API key
-        :param requestType: the HTTP request to send e.g. "GET" (see https://api.liaisonedu.com/reference/index.htm)
-        :param payload: OPTIONAL the body of the HTTP request
-        :param contentJson: OPTIONAL adds a header indicating that the body of the request is "application/json"
-        :param extraHeaders: OPTIONAL additional headers for the request; send key-values as dict
-        :param urlParams: OPTIONAL additional URL string query parameters; send key-values as dict
-        :return: raw response from endpoint
+    Interact with various CAS API endpoints
+    
+    Generic function to make HTTP requests to the CAS API. Handles authentication,
+    URL parameter construction, and header management for all API interactions.
+    
+    @param baseUrl       The root URL for the CAS API environment (default: production)
+    @param endpoint      The API endpoint path (see API documentation)
+    @param apiKey        The user's API key for authentication
+    @param requestType   The HTTP method to use (GET, POST, PUT, DELETE)
+    @param payload       Optional request body content
+    @param contentJson   Whether to set Content-Type as application/json
+    @param extraHeaders  Additional HTTP headers as dictionary
+    @param urlParams     URL query parameters as dictionary
+    @return              requests.Response object from the API call
+    @throws              requests.RequestException if API call fails
+    @throws              Exception if authentication fails
+    @since               2019-09-03
+    @see                 https://api.liaisonedu.com/reference/index.htm
     """
     if len(urlParams) == 0:
         url = baseUrl + endpoint
@@ -128,9 +177,15 @@ def casapi(endpoint, apiKey, baseUrl="https://api.liaisonedu.com", requestType="
 # Define a function to express JSON strings as tables
 def Tabular(listOfDicts):
     """
-    Present lengthy JSON string in tabular format for ease of review.
-    :param listOfDicts: JSON string from http response; should be a list of dictionaries
-    :return: tabular format of JSON string
+    Present lengthy JSON string in tabular format for ease of review
+    
+    Converts JSON response data into a formatted table for better readability
+    during development and debugging. Handles both single objects and lists.
+    
+    @param listOfDicts   JSON response data as list of dictionaries or single dict
+    @return              BeautifulTable object with formatted data
+    @throws              Exception if data structure is unexpected
+    @since               2019-09-03
     """
     try:
         headers = list(listOfDicts[0].keys())
