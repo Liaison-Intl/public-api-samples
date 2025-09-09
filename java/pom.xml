@@ -18,6 +18,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <commons-cli.version>1.10.0</commons-cli.version>
         <json-path.version>2.9.0</json-path.version>
+        <json-smart.version>2.6.0</json-smart.version>
         <text-io.version>3.4.1</text-io.version>
     </properties>
     <dependencies>
@@ -50,6 +51,11 @@
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
             <version>${json-path.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>${json-smart.version}</version>
         </dependency>
         <dependency>
             <groupId>org.beryx</groupId>
