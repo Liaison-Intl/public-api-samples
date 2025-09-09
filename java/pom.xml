@@ -10,16 +10,15 @@
     <name>unicas-application-integration-sample-client</name>
 
     <properties>
-        <apache.httpclient.version>4.5.6</apache.httpclient.version>
-        <jackson.version>2.9.7</jackson.version>
+        <apache.httpclient.version>4.5.14</apache.httpclient.version>
+        <jackson.version>2.20.0</jackson.version>
         <java.version>1.8</java.version>
         <maven.compiler.version>3.8.0</maven.compiler.version>
         <maven.shade.version>3.2.0</maven.shade.version>
-        <slf4j.version>1.7.25</slf4j.version>
-        <guava.version>27.0-jre</guava.version>
-        <commons-cli.version>1.4</commons-cli.version>
-        <json-path.version>2.4.0</json-path.version>
-        <text-io.version>3.3.0</text-io.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <commons-cli.version>1.10.0</commons-cli.version>
+        <json-path.version>2.9.0</json-path.version>
+        <text-io.version>3.4.1</text-io.version>
     </properties>
     <dependencies>
         <dependency>
