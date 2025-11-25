@@ -19,7 +19,6 @@
  */
 
 require __DIR__ . '/vendor/autoload.php';
-require __DIR__ . '/cas_api_client.php';
 
 use Dotenv\Dotenv;
 use LiasionCasApi\CasApiClient;
